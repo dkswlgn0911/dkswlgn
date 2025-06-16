@@ -13,23 +13,30 @@ def load_data():
         raw = f.read()
         encoding = chardet.detect(raw)["encoding"]
 
-    # 파일 로딩
+    # CSV 파일 읽기
     df = pd.read_csv("CARD_SUBWAY_MONTH_202505.csv", encoding=encoding)
 
-    # 날짜 처리 및 총승하차 계산
-    df['사용일자'] = pd.to_datetime(df['사용일자'], errors='coerce')
-    df['요일'] = df['사용일자'].dt.day_name()
+    # 사용일자 컬럼 제거
+    if '사용일자' in df.columns:
+        df = df.drop(columns=['사용일자'])
+
+    # 총승하차 계산
     df['총승하차'] = df['승차총승객수'] + df['하차총승객수']
+    
     return df
 
 # 데이터 불러오기
 df = load_data()
 
-# 섹션: 원본 데이터 보기
+# 컬럼 순서 정리 (노선명부터 앞으로)
+columns_order = ['노선명', '역ID', '역명', '승차총승객수', '하차총승객수', '총승하차']
+df = df[columns_order]
+
+# 원본 데이터 미리보기
 st.subheader("📄 원본 데이터 (상위 10개)")
 st.dataframe(df.head(10))
 
-# 섹션: 역별 이용량
+# 역별 총 승하차 시각화
 st.subheader("📍 역별 총 승하차 인원수")
 station_group = df.groupby('역명')['총승하차'].sum().sort_values(ascending=False)
 
@@ -40,18 +47,10 @@ ax1.set_ylabel("인원수")
 ax1.set_xlabel("역명")
 st.pyplot(fig1)
 
-# 섹션: 요일별 이용량
-st.subheader("🗓️ 요일별 총 승하차 인원수")
-weekday_order = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
-weekday_group = df.groupby('요일')['총승하차'].sum().reindex(weekday_order)
+# 노선별 총 승하차 시각화
+st.subheader("🚇 노선별 총 승하차 인원수")
+line_group = df.groupby('노선명')['총승하차'].sum().sort_values(ascending=False)
 
 fig2, ax2 = plt.subplots(figsize=(10, 5))
-weekday_group.plot(kind='bar', color='orange', ax=ax2)
-ax2.set_title("요일별 총 승하차 인원수")
-ax2.set_ylabel("인원수")
-ax2.set_xlabel("요일")
-st.pyplot(fig2)
-
-# 출처
-st.markdown("---")
-st.caption("데이터 출처: 서울 열린데이터광장")
+line_group.plot(kind='bar', color='green', ax=ax2)
+ax2.set_title("노선별_
