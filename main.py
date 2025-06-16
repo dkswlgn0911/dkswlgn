@@ -1,45 +1,35 @@
-import streamlit as st
 import pandas as pd
 import matplotlib.pyplot as plt
-import chardet
-import os
+import seaborn as sns
 
-st.set_page_config(page_title="서울 지하철 이용 분석", layout="wide")
-st.title("📊 서울 지하철 이용 분석 앱 (2025년 5월)")
+# CSV 파일 경로
+file_path = "CARD_SUBWAY_MONTH_202505.csv"
 
-@st.cache_data
-def load_data():
-    filename = "CARD_SUBWAY_MONTH_202505.csv"
-    if not os.path.exists(filename):
-        st.error("❌ CSV 파일이 현재 폴더에 없습니다.")
-        return None
+# CSV 파일 읽기 (인코딩 문제로 cp949 사용)
+df = pd.read_csv(file_path, encoding='cp949')
 
-    # 인코딩 감지
-    with open(filename, "rb") as f:
-        raw = f.read()
-        encoding = chardet.detect(raw)["encoding"]
+# 사용하지 않을 열 제거
+df = df.drop(columns=['사용일자', '등록일자', '역명'])
 
-    df = pd.read_csv(filename, encoding=encoding)
+# 노선별 승하차 인원 합계 계산
+df_grouped = df.groupby('노선명')[['승차총승객수', '하차총승객수']].sum().reset_index()
 
-    if '사용일자' in df.columns:
-        df = df.drop(columns=['사용일자'])
+# 시각화 스타일 설정
+plt.figure(figsize=(12, 6))
+sns.set(style="whitegrid")
 
-    df['총승하차'] = df['승차총승객수'] + df['하차총승객수']
-    return df
+# 막대그래프 그리기
+df_grouped = df_grouped.sort_values(by='승차총승객수', ascending=False)
+bar_plot = sns.barplot(x='노선명', y='승차총승객수', data=df_grouped, label='승차', color='skyblue')
+sns.barplot(x='노선명', y='하차총승객수', data=df_grouped, label='하차', color='orange')
 
-df = load_data()
-if df is not None:
-    st.subheader("📄 데이터 미리보기")
-    st.dataframe(df.head())
+# 그래프 꾸미기
+plt.title('2025년 5월 지하철 노선별 총 승하차 인원')
+plt.ylabel('총 승객 수')
+plt.xlabel('노선명')
+plt.legend()
+plt.xticks(rotation=45)
+plt.tight_layout()
 
-    st.subheader("📍 역별 총 승하차")
-    station_group = df.groupby('역명')['총승하차'].sum().sort_values(ascending=False)
-    fig1, ax1 = plt.subplots(figsize=(12, 6))
-    station_group.plot(kind='bar', ax=ax1)
-    st.pyplot(fig1)
-
-    st.subheader("🚇 노선별 총 승하차")
-    line_group = df.groupby('노선명')['총승하차'].sum().sort_values(ascending=False)
-    fig2, ax2 = plt.subplots(figsize=(10, 5))
-    line_group.plot(kind='bar', ax=ax2, color='green')
-    st.pyplot(fig2)
+# 출력
+plt.show()
