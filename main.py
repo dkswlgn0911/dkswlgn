@@ -53,4 +53,10 @@ line_group = df.groupby('노선명')['총승하차'].sum().sort_values(ascending
 
 fig2, ax2 = plt.subplots(figsize=(10, 5))
 line_group.plot(kind='bar', color='green', ax=ax2)
-ax2.set_title("노선별_
+ax2.set_title("노선별 총 승하차 인원수")
+ax2.set_ylabel("인원수")
+ax2.set_xlabel("노선명")
+st.pyplot(fig2)
+
+st.markdown("---")
+st.caption("데이터 출처: 서울 열린데이터광장")
