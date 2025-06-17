@@ -1,35 +1,28 @@
 import pandas as pd
 import matplotlib.pyplot as plt
-import seaborn as sns
 
-# CSV 파일 경로
-file_path = "CARD_SUBWAY_MONTH_202505.csv"
+# 1. 데이터 로드
+df = pd.read_csv('data/bills.csv', encoding='euc-kr')
 
-# CSV 파일 읽기 (인코딩 문제로 cp949 사용)
-df = pd.read_csv(file_path, encoding='cp949')
+# 2. 필요한 열 추출 및 전처리
+df_cleaned = df[['자치구명', '물건금액(만원)']].dropna()
+df_cleaned['물건금액(만원)'] = pd.to_numeric(df_cleaned['물건금액(만원)'], errors='coerce')
+df_cleaned = df_cleaned.dropna()
 
-# 사용하지 않을 열 제거
-df = df.drop(columns=['사용일자', '등록일자', '역명'])
+# 3. 자치구별 총 거래 금액 계산
+top10 = df_cleaned.groupby('자치구명')['물건금액(만원)'] \
+                  .sum() \
+                  .sort_values(ascending=False) \
+                  .head(10)
 
-# 노선별 승하차 인원 합계 계산
-df_grouped = df.groupby('노선명')[['승차총승객수', '하차총승객수']].sum().reset_index()
-
-# 시각화 스타일 설정
+# 4. 시각화
 plt.figure(figsize=(12, 6))
-sns.set(style="whitegrid")
-
-# 막대그래프 그리기
-df_grouped = df_grouped.sort_values(by='승차총승객수', ascending=False)
-bar_plot = sns.barplot(x='노선명', y='승차총승객수', data=df_grouped, label='승차', color='skyblue')
-sns.barplot(x='노선명', y='하차총승객수', data=df_grouped, label='하차', color='orange')
-
-# 그래프 꾸미기
-plt.title('2025년 5월 지하철 노선별 총 승하차 인원')
-plt.ylabel('총 승객 수')
-plt.xlabel('노선명')
-plt.legend()
+top10.plot(kind='bar', color='skyblue')
+plt.title('거래 금액 상위 10개 자치구')
+plt.xlabel('자치구')
+plt.ylabel('총 거래 금액 (만원)')
 plt.xticks(rotation=45)
+plt.grid(axis='y', linestyle='--', alpha=0.7)
 plt.tight_layout()
-
-# 출력
+plt.savefig('top10_gu_plot.png')  # 그래프 저장
 plt.show()
