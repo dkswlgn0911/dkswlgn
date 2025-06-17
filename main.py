@@ -2,7 +2,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 
 # 1. 데이터 로드
-df = pd.read_csv('data/bills.csv', encoding='euc-kr')
+df = pd.read_csv('bills.csv', encoding='euc-kr')
 
 # 2. 필요한 열 추출 및 전처리
 df_cleaned = df[['자치구명', '물건금액(만원)']].dropna()
